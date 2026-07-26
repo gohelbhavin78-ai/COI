@@ -1,459 +1,659 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ITR JSON to Word Converter</title>
-    <!-- docx library for client-side Word document generation -->
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
-        .container { background: #ffffff; max-width: 600px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 30px; border: 1px solid #e1e4e8; text-align: center; }
-        h2 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
-        p { color: #555; font-size: 14px; line-height: 1.5; margin-bottom: 25px; }
-        
-        .drop-zone {
-            border: 2px dashed #0056b3;
-            border-radius: 6px;
-            padding: 30px;
-            background-color: #f8fbff;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-            margin-bottom: 20px;
-        }
-        .drop-zone:hover { background-color: #edf5ff; border-color: #003d80; }
-        .drop-zone p { margin: 0; color: #0056b3; font-weight: 600; }
-        input[type="file"] { display: none; }
-        
-        .btn {
-            background-color: #0056b3;
-            color: #ffffff;
-            border: none;
-            padding: 12px 24px;
-            font-size: 15px;
-            font-weight: 600;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-        }
-        .btn:hover { background-color: #003d80; }
-        .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
-        
-        .status { margin-top: 15px; font-size: 14px; font-weight: 500; }
-        .status.success { color: #2e7d32; }
-        .status.error { color: #c62828; }
-        .file-info { font-size: 13px; color: #333; margin-top: 10px; word-break: break-all; }
-    </style>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ITR JSON to Word & PDF Converter</title>
+     <!-- docx library for client-side Word document generation -->
+     <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+     <!-- html2pdf.js for client-side PDF document generation -->
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+     <style>
+         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+         body { background-color: #f4f6f9; margin: 0; padding: 40px 20px; display: flex; justify-content: center; }
+         .container { background: #ffffff; max-width: 600px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 30px; border: 1px solid #e1e4e8; text-align: center; }
+         h2 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
+         p { color: #555; font-size: 14px; line-height: 1.5; margin-bottom: 25px; }
+         
+         .drop-zone {
+             border: 2px dashed #0056b3;
+             border-radius: 6px;
+             padding: 30px;
+             background-color: #f8fbff;
+             cursor: pointer;
+             transition: background 0.2s, border-color 0.2s;
+             margin-bottom: 20px;
+         }
+         .drop-zone:hover { background-color: #edf5ff; border-color: #003d80; }
+         .drop-zone p { margin: 0; color: #0056b3; font-weight: 600; }
+         input[type="file"] { display: none; }
+         
+         .btn-group {
+             display: flex;
+             gap: 12px;
+             margin-top: 10px;
+         }
+
+         .btn {
+             background-color: #0056b3;
+             color: #ffffff;
+             border: none;
+             padding: 12px 18px;
+             font-size: 14px;
+             font-weight: 600;
+             border-radius: 5px;
+             cursor: pointer;
+             flex: 1;
+             transition: background 0.2s;
+         }
+         .btn-pdf {
+             background-color: #2e7d32;
+         }
+         .btn-pdf:hover { background-color: #1b5e20; }
+         .btn:hover { background-color: #003d80; }
+         .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+         
+         .status { margin-top: 15px; font-size: 14px; font-weight: 500; }
+         .status.success { color: #2e7d32; }
+         .status.error { color: #c62828; }
+         .file-info { font-size: 13px; color: #333; margin-top: 10px; word-break: break-all; }
+
+         /* Hidden PDF template container */
+         #pdfTemplate {
+             display: none;
+             font-family: Arial, sans-serif;
+             color: #111;
+             padding: 20px;
+             background: #fff;
+         }
+         #pdfTemplate h1 { text-align: center; font-size: 18px; margin-bottom: 4px; font-weight: bold; }
+         #pdfTemplate h2 { font-size: 13px; font-weight: bold; border-bottom: 1px solid #111; padding-bottom: 3px; margin-top: 18px; margin-bottom: 8px; text-transform: uppercase; }
+         #pdfTemplate .sub-title { text-align: center; font-style: italic; font-size: 11px; margin-bottom: 15px; color: #444; }
+         #pdfTemplate table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 10.5pt; }
+         #pdfTemplate th, #pdfTemplate td { padding: 4px 6px; text-align: left; vertical-align: top; }
+         #pdfTemplate .text-right { text-align: right; }
+         #pdfTemplate .text-center { text-align: center; }
+         #pdfTemplate .bold { font-weight: bold; }
+         #pdfTemplate .page-break { page-break-before: always; }
+     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>ITR JSON to Word Computation</h2>
-    <p>Upload your standard ITR JSON file to instantly generate a clean, monochrome, print-ready Word document (`.docx`).</p>
-    
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('jsonFileInput').click()">
-        <p id="dropText">Click or Drag & Drop ITR JSON File Here</p>
-        <div class="file-info" id="fileInfo"></div>
-    </div>
-    
-    <input type="file" id="jsonFileInput" accept=".json">
-    <button class="btn" id="generateBtn" disabled onclick="processJsonAndDownload()">Download Word Document</button>
-    
-    <div class="status" id="statusMsg"></div>
+     <h2>ITR JSON to Word & PDF Converter</h2>
+     <p>Upload your standard ITR JSON file to instantly generate clean, print-ready Word (`.docx`) or PDF (`.pdf`) documents.</p>
+     
+     <div class="drop-zone" id="dropZone" onclick="document.getElementById('jsonFileInput').click()">
+         <p id="dropText">Click or Drag & Drop ITR JSON File Here</p>
+         <div class="file-info" id="fileInfo"></div>
+     </div>
+     
+     <input type="file" id="jsonFileInput" accept=".json">
+
+     <div class="btn-group">
+         <button class="btn" id="generateDocxBtn" disabled onclick="processJsonAndDownloadDocx()">Download Word (.docx)</button>
+         <button class="btn btn-pdf" id="generatePdfBtn" disabled onclick="processJsonAndDownloadPdf()">Download PDF (.pdf)</button>
+     </div>
+     
+     <div class="status" id="statusMsg"></div>
 </div>
 
+<!-- Hidden DOM Element for Rendering PDF Content -->
+<div id="pdfTemplate"></div>
+
 <script>
-    let uploadedJsonData = null;
-    let originalFileName = "";
+     let uploadedJsonData = null;
+     let originalFileName = "";
 
-    const jsonFileInput = document.getElementById('jsonFileInput');
-    const dropZone = document.getElementById('dropZone');
-    const dropText = document.getElementById('dropText');
-    const fileInfo = document.getElementById('fileInfo');
-    const generateBtn = document.getElementById('generateBtn');
-    const statusMsg = document.getElementById('statusMsg');
+     const jsonFileInput = document.getElementById('jsonFileInput');
+     const dropZone = document.getElementById('dropZone');
+     const dropText = document.getElementById('dropText');
+     const fileInfo = document.getElementById('fileInfo');
+     const generateDocxBtn = document.getElementById('generateDocxBtn');
+     const generatePdfBtn = document.getElementById('generatePdfBtn');
+     const statusMsg = document.getElementById('statusMsg');
 
-    // Drag & Drop handlers
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#edf5ff'; });
-    dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = '#f8fbff'; });
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.style.backgroundColor = '#f8fbff';
-        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-    });
+     // Drag & Drop handlers
+     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.backgroundColor = '#edf5ff'; });
+     dropZone.addEventListener('dragleave', () => { dropZone.style.backgroundColor = '#f8fbff'; });
+     dropZone.addEventListener('drop', (e) => {
+         e.preventDefault();
+         dropZone.style.backgroundColor = '#f8fbff';
+         if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+     });
 
-    jsonFileInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) handleFile(e.target.files[0]);
-    });
+     jsonFileInput.addEventListener('change', (e) => {
+         if (e.target.files.length > 0) handleFile(e.target.files[0]);
+     });
 
-    function handleFile(file) {
-        if (!file.name.endsWith('.json')) {
-            showStatus('Please upload a valid .json file.', 'error');
-            return;
-        }
-        originalFileName = file.name;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                uploadedJsonData = JSON.parse(event.target.result);
-                fileInfo.textContent = `Selected: ${file.name}`;
-                dropText.textContent = "Change File";
-                generateBtn.disabled = false;
-                showStatus('JSON loaded successfully!', 'success');
-            } catch (err) {
-                showStatus('Invalid JSON file format.', 'error');
-            }
-        };
-        reader.readAsText(file);
-    }
+     function handleFile(file) {
+         if (!file.name.endsWith('.json')) {
+             showStatus('Please upload a valid .json file.', 'error');
+             return;
+         }
+         originalFileName = file.name;
+         const reader = new FileReader();
+         reader.onload = (event) => {
+             try {
+                 uploadedJsonData = JSON.parse(event.target.result);
+                 fileInfo.textContent = `Selected: ${file.name}`;
+                 dropText.textContent = "Change File";
+                 generateDocxBtn.disabled = false;
+                 generatePdfBtn.disabled = false;
+                 showStatus('JSON loaded successfully!', 'success');
+             } catch (err) {
+                 showStatus('Invalid JSON file format.', 'error');
+             }
+         };
+         reader.readAsText(file);
+     }
 
-    function showStatus(msg, type) {
-        statusMsg.textContent = msg;
-        statusMsg.className = `status ${type}`;
-    }
+     function showStatus(msg, type) {
+         statusMsg.textContent = msg;
+         statusMsg.className = `status ${type}`;
+     }
 
-    function formatCurr(val) {
-        if (val === null || val === undefined || isNaN(val)) return "0";
-        return Number(val).toLocaleString('en-IN', { maximumFractionDigits: 2 });
-    }
+     function formatCurr(val) {
+         if (val === null || val === undefined || isNaN(val)) return "0";
+         return Number(val).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+     }
 
-    async function processJsonAndDownload() {
-        if (!uploadedJsonData) return;
-        
-        try {
-            const docxLib = window.docx;
-            const { Document, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, PageBreak } = docxLib;
+     function parseItrData(jsonData) {
+         const itr1 = jsonData?.ITR?.ITR1 || {};
+         const personal = itr1.PersonalInfo || {};
+         const assName = personal.AssesseeName || {};
+         const fullName = `${assName.FirstName || ''} ${assName.MiddleName || ''} ${assName.SurNameOrOrgName || ''}`.trim();
+         const pan = personal.PAN || '';
+         const dob = personal.DOB || '';
+         const aadhaar = personal.AadhaarCardNo || '[Aadhaar Redacted]';
+         const empCategory = personal.EmployerCategory || 'Others';
 
-            // JSON Extraction
-            const itr1 = uploadedJsonData?.ITR?.ITR1 || {};
-            const personal = itr1.PersonalInfo || {};
-            const assName = personal.AssesseeName || {};
-            const fullName = `${assName.FirstName || ''} ${assName.MiddleName || ''} ${assName.SurNameOrOrgName || ''}`.trim();
-            const pan = personal.PAN || '';
-            const dob = personal.DOB || '';
-            const aadhaar = personal.AadhaarCardNo || '';
-            const empCategory = personal.EmployerCategory || 'Others';
+         const addr = personal.Address || {};
+         const resAddr = `${addr.ResidenceNo || ''}, ${addr.ResidenceName || ''}, ${addr.RoadOrStreet || ''}, ${addr.LocalityOrArea || ''}, ${addr.CityOrTownOrDistrict || ''} - ${addr.PinCode || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
 
-            const addr = personal.Address || {};
-            const resAddr = `${addr.ResidenceNo || ''}, ${addr.ResidenceName || ''}, ${addr.RoadOrStreet || ''}, ${addr.LocalityOrArea || ''}, ${addr.CityOrTownOrDistrict || ''} - ${addr.PinCode || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+         const altAddrObj = personal.AlternateAddress || {};
+         const altAddr = `${altAddrObj.ResidenceNo || ''}, ${altAddrObj.ResidenceName || ''}, ${altAddrObj.RoadOrStreet || ''}, ${altAddrObj.LocalityOrArea || ''}, ${altAddrObj.CityOrTownOrDistrict || ''} - ${altAddrObj.PinCode || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
 
-            const altAddrObj = personal.AlternateAddress || {};
-            const altAddr = `${altAddrObj.ResidenceNo || ''}, ${altAddrObj.ResidenceName || ''}, ${altAddrObj.RoadOrStreet || ''}, ${altAddrObj.LocalityOrArea || ''}, ${altAddrObj.CityOrTownOrDistrict || ''} - ${altAddrObj.PinCode || ''}`.replace(/^[\s,]+|[\s,]+$/g, '');
+         const formDetails = itr1.Form_ITR1 || {};
+         const ay = formDetails.AssessmentYear || "2026";
+         const fy = (parseInt(ay) - 1).toString();
 
-            const formDetails = itr1.Form_ITR1 || {};
-            const ay = formDetails.AssessmentYear || "2026";
-            const fy = (parseInt(ay) - 1).toString();
+         const inc = itr1.ITR1_IncomeDeductions || {};
+         const grossSal = inc.GrossSalary || 0;
+         const stdDed = inc.DeductionUs16ia || 75000;
+         const netSal = inc.IncomeFromSal || (grossSal - stdDed);
 
-            const inc = itr1.ITR1_IncomeDeductions || {};
-            const grossSal = inc.GrossSalary || 0;
-            const stdDed = inc.DeductionUs16ia || 75000;
-            const netSal = inc.IncomeFromSal || (grossSal - stdDed);
+         let divInc = 0, savInc = 0;
+         const othDtls = inc.OthersInc?.OthersIncDtlsOthSrc || [];
+         othDtls.forEach(item => {
+             if (item.OthSrcNatureDesc === "DIV") divInc += (item.OthSrcOthAmount || 0);
+             if (item.OthSrcNatureDesc === "SAV") savInc += (item.OthSrcOthAmount || 0);
+         });
+         const totOtherInc = inc.IncomeOthSrc || (divInc + savInc);
+         const gti = inc.GrossTotIncome || (netSal + totOtherInc);
+         const totDeductions = inc.DeductUndChapVIA?.TotalChapVIADeductions || 0;
+         const totIncome = inc.TotalIncome || (gti - totDeductions);
 
-            let divInc = 0, savInc = 0;
-            const othDtls = inc.OthersInc?.OthersIncDtlsOthSrc || [];
-            othDtls.forEach(item => {
-                if (item.OthSrcNatureDesc === "DIV") divInc += (item.OthSrcOthAmount || 0);
-                if (item.OthSrcNatureDesc === "SAV") savInc += (item.OthSrcOthAmount || 0);
-            });
-            const totOtherInc = inc.IncomeOthSrc || (divInc + savInc);
-            const gti = inc.GrossTotIncome || (netSal + totOtherInc);
-            const totDeductions = inc.DeductUndChapVIA?.TotalChapVIADeductions || 0;
-            const totIncome = inc.TotalIncome || (gti - totDeductions);
+         const taxComp = itr1.ITR1_TaxComputation || {};
+         const totTaxPayable = taxComp.TotalTaxPayable || 0;
+         const rebate = taxComp.Rebate87A || 0;
+         const taxAfterRebate = taxComp.TaxPayableOnRebate || 0;
+         const cess = taxComp.EducationCess || 0;
+         const netTaxLiability = taxComp.NetTaxLiability || 0;
 
-            const taxComp = itr1.ITR1_TaxComputation || {};
-            const totTaxPayable = taxComp.TotalTaxPayable || 0;
-            const rebate = taxComp.Rebate87A || 0;
-            const taxAfterRebate = taxComp.TaxPayableOnRebate || 0;
-            const cess = taxComp.EducationCess || 0;
-            const netTaxLiability = taxComp.NetTaxLiability || 0;
+         const taxesPaidObj = itr1.TaxPaid?.TaxesPaid || {};
+         const advTax = taxesPaidObj.AdvanceTax || 0;
+         const tds = taxesPaidObj.TDS || 0;
+         const tcs = taxesPaidObj.TCS || 0;
+         const sat = taxesPaidObj.SelfAssessmentTax || 0;
+         const totTaxesPaid = taxesPaidObj.TotalTaxesPaid || (advTax + tds + tcs + sat);
+         const refundDue = itr1.Refund?.RefundDue || (totTaxesPaid > netTaxLiability ? totTaxesPaid - netTaxLiability : 0);
 
-            const taxesPaidObj = itr1.TaxPaid?.TaxesPaid || {};
-            const advTax = taxesPaidObj.AdvanceTax || 0;
-            const tds = taxesPaidObj.TDS || 0;
-            const tcs = taxesPaidObj.TCS || 0;
-            const sat = taxesPaidObj.SelfAssessmentTax || 0;
-            const totTaxesPaid = taxesPaidObj.TotalTaxesPaid || (advTax + tds + tcs + sat);
-            const refundDue = itr1.Refund?.RefundDue || (totTaxesPaid > netTaxLiability ? totTaxesPaid - netTaxLiability : 0);
+         const bankDtls = itr1.Refund?.BankAccountDtls?.AddtnlBankDetails?.[0] || {};
+         const bankName = bankDtls.BankName || '';
+         const accNo = bankDtls.BankAccountNo || '';
+         const ifsc = bankDtls.IFSCCode || '';
 
-            const bankDtls = itr1.Refund?.BankAccountDtls?.AddtnlBankDetails?.[0] || {};
-            const bankName = bankDtls.BankName || '';
-            const accNo = bankDtls.BankAccountNo || '';
-            const ifsc = bankDtls.IFSCCode || '';
+         const ver = itr1.Verification || {};
+         const decl = ver.Declaration || {};
+         const verifiedBy = decl.AssesseeVerName || fullName;
+         const fatherName = decl.FatherName || '';
+         const verPlace = ver.Place || '';
+         const verDate = itr1.CreationInfo?.JSONCreationDate || '';
 
-            const ver = itr1.Verification || {};
-            const decl = ver.Declaration || {};
-            const verifiedBy = decl.AssesseeVerName || fullName;
-            const fatherName = decl.FatherName || '';
-            const verPlace = ver.Place || '';
-            const verDate = itr1.CreationInfo?.JSONCreationDate || '';
+         return {
+             fullName, pan, dob, aadhaar, empCategory, resAddr, altAddr,
+             formDetails, ay, fy, grossSal, stdDed, netSal, divInc, savInc,
+             totOtherInc, gti, totDeductions, totIncome, totTaxPayable, rebate,
+             taxAfterRebate, cess, netTaxLiability, advTax, tds, tcs, sat,
+             totTaxesPaid, refundDue, bankName, accNo, ifsc, verifiedBy,
+             fatherName, verPlace, verDate, personal
+         };
+     }
 
-            // Table Border Helper
-            const tableBorders = {
-                top: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC" },
-                bottom: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC" },
-                insideHorizontal: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC" },
-                left: { style: BorderStyle.NONE },
-                right: { style: BorderStyle.NONE },
-                insideVertical: { style: BorderStyle.NONE }
-            };
+     // --- GENERATE WORD (.DOCX) FILE ---
+     async function processJsonAndDownloadDocx() {
+         if (!uploadedJsonData) return;
+         
+         try {
+             const data = parseItrData(uploadedJsonData);
+             const docxLib = window.docx;
+             const { Document, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle, PageBreak } = docxLib;
 
-            const cellPadding = { top: 100, bottom: 100, left: 150, right: 150 };
+             // Borders without horizontal row lines
+             const tableBordersNoRowLines = {
+                 top: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC" },
+                 bottom: { style: BorderStyle.SINGLE, size: 4, color: "CCCCCC" },
+                 insideHorizontal: { style: BorderStyle.NONE },
+                 left: { style: BorderStyle.NONE },
+                 right: { style: BorderStyle.NONE },
+                 insideVertical: { style: BorderStyle.NONE }
+             };
 
-            function createHeading(text) {
-                return new Paragraph({
-                    children: [new TextRun({ text, bold: true, size: 22, font: "Arial" })],
-                    space: { before: 240, after: 80 }
-                });
-            }
+             const cellPadding = { top: 80, bottom: 80, left: 150, right: 150 };
 
-            // --- PAGE 1: COMPUTATION ---
-            const doc = new Document({
-                sections: [{
-                    properties: {
-                        page: {
-                            margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 } // 0.75 in
-                        }
-                    },
-                    children: [
-                        // Title
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            children: [new TextRun({ text: "COMPUTATION OF TOTAL INCOME & TAX LIABILITY", bold: true, size: 28, font: "Arial" })]
-                        }),
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            space: { after: 280 },
-                            children: [new TextRun({ text: `Assessment Year: ${ay}-${parseInt(ay)+1-2000} | Financial Year: ${fy}-${parseInt(fy)+1-2000} | Tax Regime: New Tax Regime`, italic: true, size: 19, font: "Arial" })]
-                        }),
+             function createHeading(text) {
+                 return new Paragraph({
+                     children: [new TextRun({ text, bold: true, size: 22, font: "Arial" })],
+                     space: { before: 200, after: 60 }
+                 });
+             }
 
-                        // Section 1
-                        createHeading("1. PERSONAL & ASSESSEE INFORMATION"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Name of Assessee", fullName, "PAN", pan],
-                                ["Father's Name", fatherName, "Date of Birth", dob],
-                                ["Aadhaar Number", aadhaar, "Employer Category", empCategory],
-                                ["Mobile Number", String(personal.Address?.MobileNo || ''), "Email Address", personal.Address?.EmailAddress || ''],
-                                ["Residential Address", resAddr, "Filing Status", "On or before Due Date"],
-                                ["Alternate Address", altAddr, "Form Filed", formDetails.FormName || "ITR-1"]
-                            ].map(row => new TableRow({
-                                children: row.map((cellText, idx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: (idx === 0 || idx === 2), size: 19, font: "Arial" })] })]
-                                }))
-                            }))
-                        }),
+             function createTableSpacing() {
+                 return new Paragraph({
+                     text: "",
+                     space: { before: 0, after: 180 }
+                 });
+             }
 
-                        // Section 2
-                        createHeading("2. STATEMENT OF COMPUTATION OF INCOME"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Particulars", "Amount (₹)", "Deductions (₹)", "Net Income (₹)"],
-                                ["A. INCOME FROM SALARY / PENSION", formatCurr(grossSal), "", ""],
-                                ["   Less: Standard Deduction", "", formatCurr(stdDed), ""],
-                                ["   Net Income Chargeable under 'Salaries'", "", "", formatCurr(netSal)],
-                                ["B. INCOME FROM OTHER SOURCES", "", "", ""],
-                                ["   1. Dividend Income", formatCurr(divInc), "", ""],
-                                ["   2. Interest from Savings Bank Account", formatCurr(savInc), "", ""],
-                                ["   Net Income Chargeable under 'Other Sources'", "", "", formatCurr(totOtherInc)],
-                                ["GROSS TOTAL INCOME (A + B)", "", "", formatCurr(gti)],
-                                ["Less: Chapter VI-A Deductions", "", formatCurr(totDeductions), ""],
-                                ["TOTAL TAXABLE INCOME", "", "", formatCurr(totIncome)]
-                            ].map((row, rIdx) => new TableRow({
-                                children: row.map((cellText, cIdx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({
-                                        alignment: cIdx > 0 ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                                        children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].startsWith("A.") || row[0].startsWith("B.") || row[0].includes("GROSS") || row[0].includes("TOTAL") || row[0].includes("Net Income")), size: 19, font: "Arial" })]
-                                    })]
-                                }))
-                            }))
-                        }),
+             // --- PAGE 1: COMPUTATION ---
+             const doc = new Document({
+                 sections: [{
+                     properties: {
+                         page: {
+                             margin: { top: 1080, bottom: 1080, left: 1080, right: 1080 } // 0.75 in
+                         }
+                     },
+                     children: [
+                         // Title
+                         new Paragraph({
+                             alignment: AlignmentType.CENTER,
+                             children: [new TextRun({ text: "COMPUTATION OF TOTAL INCOME & TAX LIABILITY", bold: true, size: 28, font: "Arial" })]
+                         }),
+                         new Paragraph({
+                             alignment: AlignmentType.CENTER,
+                             space: { after: 200 },
+                             children: [new TextRun({ text: `Assessment Year: ${data.ay}-${parseInt(data.ay)+1-2000} | Financial Year: ${data.fy}-${parseInt(data.fy)+1-2000} | Tax Regime: New Tax Regime`, italic: true, size: 19, font: "Arial" })]
+                         }),
 
-                        // Section 3
-                        createHeading("3. TAX COMPUTATION & PAYMENT DETAILS"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Particulars", "Amount (₹)"],
-                                ["Gross Tax Payable on Total Income", formatCurr(totTaxPayable)],
-                                ["Less: Tax Rebate u/s 87A", formatCurr(rebate)],
-                                ["Tax Payable after Rebate", formatCurr(taxAfterRebate)],
-                                ["Add: Health & Education Cess (4%)", formatCurr(cess)],
-                                ["Total Gross Tax Liability", formatCurr(netTaxLiability)],
-                                ["Less: Relief u/s 89", "0"],
-                                ["NET TAX LIABILITY", formatCurr(netTaxLiability)]
-                            ].map((row, rIdx) => new TableRow({
-                                children: row.map((cellText, cIdx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({
-                                        alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                                        children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("NET TAX") || row[0].includes("Gross Tax")), size: 19, font: "Arial" })]
-                                    })]
-                                }))
-                            }))
-                        }),
+                         // Section 1
+                         createHeading("1. PERSONAL & ASSESSEE INFORMATION"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Name of Assessee", data.fullName, "PAN", data.pan],
+                                 ["Father's Name", data.fatherName, "Date of Birth", data.dob],
+                                 ["Aadhaar Number", data.aadhaar, "Employer Category", data.empCategory],
+                                 ["Mobile Number", String(data.personal.Address?.MobileNo || ''), "Email Address", data.personal.Address?.EmailAddress || ''],
+                                 ["Residential Address", data.resAddr, "Filing Status", "On or before Due Date"],
+                                 ["Alternate Address", data.altAddr, "Form Filed", data.formDetails.FormName || "ITR-1"]
+                             ].map(row => new TableRow({
+                                 children: row.map((cellText, idx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: (idx === 0 || idx === 2), size: 19, font: "Arial" })] })]
+                                 }))
+                             }))
+                         }),
+                         createTableSpacing(),
 
-                        // Section 4
-                        createHeading("4. TAXES PAID & REFUND / BAL PAYABLE"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Particulars", "Amount Paid (₹)"],
-                                ["Advance Tax Paid", formatCurr(advTax)],
-                                ["Tax Deducted at Source (TDS)", formatCurr(tds)],
-                                ["Tax Collected at Source (TCS)", formatCurr(tcs)],
-                                ["Self-Assessment Tax Paid", formatCurr(sat)],
-                                ["TOTAL TAXES PAID", formatCurr(totTaxesPaid)],
-                                ["REFUND DUE / (BALANCE TAX PAYABLE)", formatCurr(refundDue)]
-                            ].map((row, rIdx) => new TableRow({
-                                children: row.map((cellText, cIdx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({
-                                        alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                                        children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("TOTAL TAXES") || row[0].includes("REFUND DUE")), size: 19, font: "Arial" })]
-                                    })]
-                                }))
-                            }))
-                        }),
+                         // Section 2
+                         createHeading("2. STATEMENT OF COMPUTATION OF INCOME"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Particulars", "Amount (₹)", "Deductions (₹)", "Net Income (₹)"],
+                                 ["A. INCOME FROM SALARY / PENSION", formatCurr(data.grossSal), "", ""],
+                                 ["   Less: Standard Deduction", "", formatCurr(data.stdDed), ""],
+                                 ["   Net Income Chargeable under 'Salaries'", "", "", formatCurr(data.netSal)],
+                                 ["B. INCOME FROM OTHER SOURCES", "", "", ""],
+                                 ["   1. Dividend Income", formatCurr(data.divInc), "", ""],
+                                 ["   2. Interest from Savings Bank Account", formatCurr(data.savInc), "", ""],
+                                 ["   Net Income Chargeable under 'Other Sources'", "", "", formatCurr(data.totOtherInc)],
+                                 ["GROSS TOTAL INCOME (A + B)", "", "", formatCurr(data.gti)],
+                                 ["Less: Chapter VI-A Deductions", "", formatCurr(data.totDeductions), ""],
+                                 ["TOTAL TAXABLE INCOME", "", "", formatCurr(data.totIncome)]
+                             ].map((row, rIdx) => new TableRow({
+                                 children: row.map((cellText, cIdx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({
+                                         alignment: cIdx > 0 ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                                         children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].startsWith("A.") || row[0].startsWith("B.") || row[0].includes("GROSS") || row[0].includes("TOTAL") || row[0].includes("Net Income")), size: 19, font: "Arial" })]
+                                     })]
+                                 }))
+                             }))
+                         }),
+                         createTableSpacing(),
 
-                        // Section 5
-                        createHeading("5. BANK ACCOUNT & VERIFICATION DETAILS"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Bank Name", bankName, "Account Type", "Savings (SB)"],
-                                ["Account Number", accNo, "IFSC Code", ifsc],
-                                ["Refund Status", "Selected for Direct Credit", "Verification Place", verPlace],
-                                ["Verification Date", verDate, "Verified By", verifiedBy]
-                            ].map(row => new TableRow({
-                                children: row.map((cellText, idx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: (idx === 0 || idx === 2), size: 19, font: "Arial" })] })]
-                                }))
-                            }))
-                        }),
+                         // Section 3
+                         createHeading("3. TAX COMPUTATION & PAYMENT DETAILS"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Particulars", "Amount (₹)"],
+                                 ["Gross Tax Payable on Total Income", formatCurr(data.totTaxPayable)],
+                                 ["Less: Tax Rebate u/s 87A", formatCurr(data.rebate)],
+                                 ["Tax Payable after Rebate", formatCurr(data.taxAfterRebate)],
+                                 ["Add: Health & Education Cess (4%)", formatCurr(data.cess)],
+                                 ["Total Gross Tax Liability", formatCurr(data.netTaxLiability)],
+                                 ["Less: Relief u/s 89", "0"],
+                                 ["NET TAX LIABILITY", formatCurr(data.netTaxLiability)]
+                             ].map((row, rIdx) => new TableRow({
+                                 children: row.map((cellText, cIdx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({
+                                         alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                                         children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("NET TAX") || row[0].includes("Gross Tax")), size: 19, font: "Arial" })]
+                                     })]
+                                 }))
+                             }))
+                         }),
+                         createTableSpacing(),
 
-                        // Page break for Bank Study
-                        new Paragraph({ children: [new PageBreak()] }),
+                         // Section 4
+                         createHeading("4. TAXES PAID & REFUND / BAL PAYABLE"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Particulars", "Amount Paid (₹)"],
+                                 ["Advance Tax Paid", formatCurr(data.advTax)],
+                                 ["Tax Deducted at Source (TDS)", formatCurr(data.tds)],
+                                 ["Tax Collected at Source (TCS)", formatCurr(data.tcs)],
+                                 ["Self-Assessment Tax Paid", formatCurr(data.sat)],
+                                 ["TOTAL TAXES PAID", formatCurr(data.totTaxesPaid)],
+                                 ["REFUND DUE / (BALANCE TAX PAYABLE)", formatCurr(data.refundDue)]
+                             ].map((row, rIdx) => new TableRow({
+                                 children: row.map((cellText, cIdx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({
+                                         alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                                         children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("TOTAL TAXES") || row[0].includes("REFUND DUE")), size: 19, font: "Arial" })]
+                                     })]
+                                 }))
+                             }))
+                         }),
+                         createTableSpacing(),
 
-                        // --- PAGE 2: BANK CREDIT STUDY ---
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            children: [new TextRun({ text: "BANK FINANCIAL STUDY & LOAN ELIGIBILITY SHEET", bold: true, size: 28, font: "Arial" })]
-                        }),
-                        new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            space: { after: 280 },
-                            children: [new TextRun({ text: "Summary of Cash Flows, Debt Capacity, and FOIR Analysis for Banking & Credit Assessment", italic: true, size: 19, font: "Arial" })]
-                        }),
+                         // Section 5
+                         createHeading("5. BANK ACCOUNT & VERIFICATION DETAILS"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Bank Name", data.bankName, "Account Type", "Savings (SB)"],
+                                 ["Account Number", data.accNo, "IFSC Code", data.ifsc],
+                                 ["Refund Status", "Selected for Direct Credit", "Verification Place", data.verPlace],
+                                 ["Verification Date", data.verDate, "Verified By", data.verifiedBy]
+                             ].map(row => new TableRow({
+                                 children: row.map((cellText, idx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: (idx === 0 || idx === 2), size: 19, font: "Arial" })] })]
+                                 }))
+                             }))
+                         }),
 
-                        createHeading("1. ANNUAL & MONTHLY INCOME SUMMARY"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Income Parameter", "Annual Amount (₹)", "Monthly Amount (₹)", "Basis / Notes"],
-                                ["Gross Salary Income", formatCurr(grossSal), formatCurr(grossSal/12), "Salary Income"],
-                                ["Standard Deduction Allowed", formatCurr(stdDed), formatCurr(stdDed/12), "Statutory Deduction"],
-                                ["Net Salary Income", formatCurr(netSal), formatCurr(netSal/12), "Net Taxable Salary"],
-                                ["Dividend Income", formatCurr(divInc), formatCurr(divInc/12), "Passive Yield"],
-                                ["Savings Interest Income", formatCurr(savInc), formatCurr(savInc/12), "Bank Interest"],
-                                ["GROSS TOTAL INCOME (GTI)", formatCurr(gti), formatCurr(gti/12), "Total Annual Cash Flow Base"]
-                            ].map((row, rIdx) => new TableRow({
-                                children: row.map((cellText, cIdx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({
-                                        alignment: (cIdx === 1 || cIdx === 2) ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                                        children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("GROSS") || row[0].includes("Net Salary")), size: 19, font: "Arial" })]
-                                    })]
-                                }))
-                            }))
-                        }),
+                         // Page break for Bank Study
+                         new Paragraph({ children: [new PageBreak()] }),
 
-                        createHeading("2. ESTIMATED LOAN ELIGIBILITY & REPAYMENT CAPACITY"),
-                        (() => {
-                            const mGti = gti / 12;
-                            const foir = 0.50;
-                            const mEmi = mGti * foir;
-                            const rMonthly = 0.085 / 12;
-                            const nMonths = 180;
-                            const maxLoan = mEmi * ((1 - Math.pow(1 + rMonthly, -nMonths)) / rMonthly);
+                         // --- PAGE 2: BANK CREDIT STUDY ---
+                         new Paragraph({
+                             alignment: AlignmentType.CENTER,
+                             children: [new TextRun({ text: "BANK FINANCIAL STUDY & LOAN ELIGIBILITY SHEET", bold: true, size: 28, font: "Arial" })]
+                         }),
+                         new Paragraph({
+                             alignment: AlignmentType.CENTER,
+                             space: { after: 200 },
+                             children: [new TextRun({ text: "Summary of Cash Flows, Debt Capacity, and FOIR Analysis for Banking & Credit Assessment", italic: true, size: 19, font: "Arial" })]
+                         }),
 
-                            return new Table({
-                                width: { size: 100, type: WidthType.PERCENTAGE },
-                                borders: tableBorders,
-                                rows: [
-                                    ["Parameter", "Value", "Notes"],
-                                    ["Assumed FOIR Benchmark (Fixed Obligation to Income)", "50.0%", "Standard Bank Policy Norm (50%)"],
-                                    ["Monthly Net Eligible Cash Flow for EMI", `₹ ${formatCurr(mEmi)}`, "Net Monthly Income x FOIR %"],
-                                    ["Assumed Loan Interest Rate (p.a.)", "8.5%", "Prevailing Retail Loan Rate"],
-                                    ["Assumed Tenure (Years)", "15", "180 Months"],
-                                    ["Estimated Max EMI Capacity (Monthly)", `₹ ${formatCurr(mEmi)}`, "Maximum Monthly Installment Limit"],
-                                    ["Estimated Max Loan Eligibility (Principal)", `₹ ${formatCurr(maxLoan)}`, "Present Value of Cash Flow Capacity"]
-                                ].map((row, rIdx) => new TableRow({
-                                    children: row.map((cellText, cIdx) => new TableCell({
-                                        margins: cellPadding,
-                                        children: [new Paragraph({
-                                            alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
-                                            children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("Estimated Max")), size: 19, font: "Arial" })]
-                                        })]
-                                    }))
-                                }))
-                            });
-                        })(),
+                         createHeading("1. ANNUAL & MONTHLY INCOME SUMMARY"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Income Parameter", "Annual Amount (₹)", "Monthly Amount (₹)", "Basis / Notes"],
+                                 ["Gross Salary Income", formatCurr(data.grossSal), formatCurr(data.grossSal/12), "Salary Income"],
+                                 ["Standard Deduction Allowed", formatCurr(data.stdDed), formatCurr(data.stdDed/12), "Statutory Deduction"],
+                                 ["Net Salary Income", formatCurr(data.netSal), formatCurr(data.netSal/12), "Net Taxable Salary"],
+                                 ["Dividend Income", formatCurr(data.divInc), formatCurr(data.divInc/12), "Passive Yield"],
+                                 ["Savings Interest Income", formatCurr(data.savInc), formatCurr(data.savInc/12), "Bank Interest"],
+                                 ["GROSS TOTAL INCOME (GTI)", formatCurr(data.gti), formatCurr(data.gti/12), "Total Annual Cash Flow Base"]
+                             ].map((row, rIdx) => new TableRow({
+                                 children: row.map((cellText, cIdx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({
+                                         alignment: (cIdx === 1 || cIdx === 2) ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                                         children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("GROSS") || row[0].includes("Net Salary")), size: 19, font: "Arial" })]
+                                     })]
+                                 }))
+                             }))
+                         }),
+                         createTableSpacing(),
 
-                        createHeading("3. BANK COMPLIANCE & VERIFICATION CHECKLIST"),
-                        new Table({
-                            width: { size: 100, type: WidthType.PERCENTAGE },
-                            borders: tableBorders,
-                            rows: [
-                                ["Check Item", "Details", "Status"],
-                                ["ITR Form & Filing Compliance", `${formDetails.FormName || 'ITR-1'} - Filed u/s 139(1)`, "VERIFIED / COMPLIANT"],
-                                ["PAN & Aadhaar Seeding", `PAN: ${pan} / Aadhaar: ${aadhaar}`, "LINKED & VERIFIED"],
-                                ["Tax Payment Track Record", `Advance Tax + TCS + SAT Paid: ₹ ${formatCurr(totTaxesPaid)}`, "REGULAR TAXPAYER"],
-                                ["Bank Account Refund Routing", `${bankName} (A/c: ...${accNo.slice(-4)})`, "ACTIVE SAVINGS A/C"],
-                                ["Income Consistency", "Salaried Income with Supplemental Savings/Div", "STABLE INCOME SOURCE"]
-                            ].map((row, rIdx) => new TableRow({
-                                children: row.map((cellText, cIdx) => new TableCell({
-                                    margins: cellPadding,
-                                    children: [new Paragraph({
-                                        alignment: cIdx === 2 ? AlignmentType.CENTER : AlignmentType.LEFT,
-                                        children: [new TextRun({ text: cellText, bold: (rIdx === 0 || cIdx === 0 || cIdx === 2), size: 19, font: "Arial" })]
-                                    })]
-                                }))
-                            }))
-                        })
-                    ]
-                }]
-            });
+                         createHeading("2. ESTIMATED LOAN ELIGIBILITY & REPAYMENT CAPACITY"),
+                         (() => {
+                             const mGti = data.gti / 12;
+                             const foir = 0.50;
+                             const mEmi = mGti * foir;
+                             const rMonthly = 0.085 / 12;
+                             const nMonths = 180;
+                             const maxLoan = mEmi * ((1 - Math.pow(1 + rMonthly, -nMonths)) / rMonthly);
 
-            // Pack & Download
-            const blob = await docxLib.Packer.toBlob(doc);
-            const outName = `Income_Computation_${fullName ? fullName.replace(/\s+/g, '_') : 'Taxpayer'}.docx`;
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = outName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                             return new Table({
+                                 width: { size: 100, type: WidthType.PERCENTAGE },
+                                 borders: tableBordersNoRowLines,
+                                 rows: [
+                                     ["Parameter", "Value", "Notes"],
+                                     ["Assumed FOIR Benchmark (Fixed Obligation to Income)", "50.0%", "Standard Bank Policy Norm (50%)"],
+                                     ["Monthly Net Eligible Cash Flow for EMI", `₹ ${formatCurr(mEmi)}`, "Net Monthly Income x FOIR %"],
+                                     ["Assumed Loan Interest Rate (p.a.)", "8.5%", "Prevailing Retail Loan Rate"],
+                                     ["Assumed Tenure (Years)", "15", "180 Months"],
+                                     ["Estimated Max EMI Capacity (Monthly)", `₹ ${formatCurr(mEmi)}`, "Maximum Monthly Installment Limit"],
+                                     ["Estimated Max Loan Eligibility (Principal)", `₹ ${formatCurr(maxLoan)}`, "Present Value of Cash Flow Capacity"]
+                                 ].map((row, rIdx) => new TableRow({
+                                     children: row.map((cellText, cIdx) => new TableCell({
+                                         margins: cellPadding,
+                                         children: [new Paragraph({
+                                             alignment: cIdx === 1 ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                                             children: [new TextRun({ text: cellText, bold: (rIdx === 0 || row[0].includes("Estimated Max")), size: 19, font: "Arial" })]
+                                         })]
+                                     }))
+                                 }))
+                             });
+                         })(),
+                         createTableSpacing(),
 
-            showStatus('Word Document generated successfully!', 'success');
-        } catch (error) {
-            console.error(error);
-            showStatus('Error generating Word document. Check JSON structure.', 'error');
-        }
-    }
+                         createHeading("3. BANK COMPLIANCE & VERIFICATION CHECKLIST"),
+                         new Table({
+                             width: { size: 100, type: WidthType.PERCENTAGE },
+                             borders: tableBordersNoRowLines,
+                             rows: [
+                                 ["Check Item", "Details", "Status"],
+                                 ["ITR Form & Filing Compliance", `${data.formDetails.FormName || 'ITR-1'} - Filed u/s 139(1)`, "VERIFIED / COMPLIANT"],
+                                 ["PAN & Aadhaar Seeding", `PAN: ${data.pan} / Aadhaar: ${data.aadhaar}`, "LINKED & VERIFIED"],
+                                 ["Tax Payment Track Record", `Advance Tax + TCS + SAT Paid: ₹ ${formatCurr(data.totTaxesPaid)}`, "REGULAR TAXPAYER"],
+                                 ["Bank Account Refund Routing", `${data.bankName} (A/c: ...${data.accNo.slice(-4)})`, "ACTIVE SAVINGS A/C"],
+                                 ["Income Consistency", "Salaried Income with Supplemental Savings/Div", "STABLE INCOME SOURCE"]
+                             ].map((row, rIdx) => new TableRow({
+                                 children: row.map((cellText, cIdx) => new TableCell({
+                                     margins: cellPadding,
+                                     children: [new Paragraph({
+                                         alignment: cIdx === 2 ? AlignmentType.CENTER : AlignmentType.LEFT,
+                                         children: [new TextRun({ text: cellText, bold: (rIdx === 0 || cIdx === 0 || cIdx === 2), size: 19, font: "Arial" })]
+                                     })]
+                                 }))
+                             }))
+                         })
+                     ]
+                 }]
+             });
+
+             // Pack & Download
+             const blob = await docxLib.Packer.toBlob(doc);
+             const outName = `Income_Computation_${data.fullName ? data.fullName.replace(/\s+/g, '_') : 'Taxpayer'}.docx`;
+
+             const link = document.createElement('a');
+             link.href = URL.createObjectURL(blob);
+             link.download = outName;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+
+             showStatus('Word Document generated successfully!', 'success');
+         } catch (error) {
+             console.error(error);
+             showStatus('Error generating Word document. Check JSON structure.', 'error');
+         }
+     }
+
+     // --- GENERATE PDF FILE DIRECTLY ---
+     async function processJsonAndDownloadPdf() {
+         if (!uploadedJsonData) return;
+
+         try {
+             const data = parseItrData(uploadedJsonData);
+             const template = document.getElementById('pdfTemplate');
+
+             const mGti = data.gti / 12;
+             const foir = 0.50;
+             const mEmi = mGti * foir;
+             const rMonthly = 0.085 / 12;
+             const nMonths = 180;
+             const maxLoan = mEmi * ((1 - Math.pow(1 + rMonthly, -nMonths)) / rMonthly);
+
+             // Construct HTML for PDF rendering
+             template.innerHTML = `
+                 <h1>COMPUTATION OF TOTAL INCOME & TAX LIABILITY</h1>
+                 <div class="sub-title">Assessment Year: ${data.ay}-${parseInt(data.ay)+1-2000} | Financial Year: ${data.fy}-${parseInt(data.fy)+1-2000} | Tax Regime: New Tax Regime</div>
+
+                 <h2>1. Personal & Assessee Information</h2>
+                 <table>
+                     <tr><td class="bold">Name of Assessee</td><td>${data.fullName}</td><td class="bold">PAN</td><td>${data.pan}</td></tr>
+                     <tr><td class="bold">Father's Name</td><td>${data.fatherName}</td><td class="bold">Date of Birth</td><td>${data.dob}</td></tr>
+                     <tr><td class="bold">Aadhaar Number</td><td>${data.aadhaar}</td><td class="bold">Employer Category</td><td>${data.empCategory}</td></tr>
+                     <tr><td class="bold">Mobile Number</td><td>${data.personal.Address?.MobileNo || ''}</td><td class="bold">Email Address</td><td>${data.personal.Address?.EmailAddress || ''}</td></tr>
+                     <tr><td class="bold">Residential Address</td><td>${data.resAddr}</td><td class="bold">Filing Status</td><td>On or before Due Date</td></tr>
+                     <tr><td class="bold">Alternate Address</td><td>${data.altAddr}</td><td class="bold">Form Filed</td><td>${data.formDetails.FormName || "ITR-1"}</td></tr>
+                 </table>
+
+                 <h2>2. Statement of Computation of Income</h2>
+                 <table>
+                     <tr class="bold"><td>Particulars</td><td class="text-right">Amount (₹)</td><td class="text-right">Deductions (₹)</td><td class="text-right">Net Income (₹)</td></tr>
+                     <tr class="bold"><td>A. INCOME FROM SALARY / PENSION</td><td class="text-right">${formatCurr(data.grossSal)}</td><td></td><td></td></tr>
+                     <tr><td>&nbsp;&nbsp;&nbsp;Less: Standard Deduction</td><td></td><td class="text-right">${formatCurr(data.stdDed)}</td><td></td></tr>
+                     <tr class="bold"><td>&nbsp;&nbsp;&nbsp;Net Income Chargeable under 'Salaries'</td><td></td><td></td><td class="text-right">${formatCurr(data.netSal)}</td></tr>
+                     <tr class="bold"><td>B. INCOME FROM OTHER SOURCES</td><td></td><td></td><td></td></tr>
+                     <tr><td>&nbsp;&nbsp;&nbsp;1. Dividend Income</td><td class="text-right">${formatCurr(data.divInc)}</td><td></td><td></td></tr>
+                     <tr><td>&nbsp;&nbsp;&nbsp;2. Interest from Savings Bank Account</td><td class="text-right">${formatCurr(data.savInc)}</td><td></td><td></td></tr>
+                     <tr class="bold"><td>&nbsp;&nbsp;&nbsp;Net Income Chargeable under 'Other Sources'</td><td></td><td></td><td class="text-right">${formatCurr(data.totOtherInc)}</td></tr>
+                     <tr class="bold"><td>GROSS TOTAL INCOME (A + B)</td><td></td><td></td><td class="text-right">${formatCurr(data.gti)}</td></tr>
+                     <tr><td>Less: Chapter VI-A Deductions</td><td></td><td class="text-right">${formatCurr(data.totDeductions)}</td><td></td></tr>
+                     <tr class="bold"><td>TOTAL TAXABLE INCOME</td><td></td><td></td><td class="text-right">${formatCurr(data.totIncome)}</td></tr>
+                 </table>
+
+                 <h2>3. Tax Computation & Payment Details</h2>
+                 <table>
+                     <tr class="bold"><td>Particulars</td><td class="text-right">Amount (₹)</td></tr>
+                     <tr><td>Gross Tax Payable on Total Income</td><td class="text-right">${formatCurr(data.totTaxPayable)}</td></tr>
+                     <tr><td>Less: Tax Rebate u/s 87A</td><td class="text-right">${formatCurr(data.rebate)}</td></tr>
+                     <tr><td>Tax Payable after Rebate</td><td class="text-right">${formatCurr(data.taxAfterRebate)}</td></tr>
+                     <tr><td>Add: Health & Education Cess (4%)</td><td class="text-right">${formatCurr(data.cess)}</td></tr>
+                     <tr><td>Total Gross Tax Liability</td><td class="text-right">${formatCurr(data.netTaxLiability)}</td></tr>
+                     <tr><td>Less: Relief u/s 89</td><td class="text-right">0</td></tr>
+                     <tr class="bold"><td>NET TAX LIABILITY</td><td class="text-right">${formatCurr(data.netTaxLiability)}</td></tr>
+                 </table>
+
+                 <h2>4. Taxes Paid & Refund / Bal Payable</h2>
+                 <table>
+                     <tr class="bold"><td>Particulars</td><td class="text-right">Amount Paid (₹)</td></tr>
+                     <tr><td>Advance Tax Paid</td><td class="text-right">${formatCurr(data.advTax)}</td></tr>
+                     <tr><td>Tax Deducted at Source (TDS)</td><td class="text-right">${formatCurr(data.tds)}</td></tr>
+                     <tr><td>Tax Collected at Source (TCS)</td><td class="text-right">${formatCurr(data.tcs)}</td></tr>
+                     <tr><td>Self-Assessment Tax Paid</td><td class="text-right">${formatCurr(data.sat)}</td></tr>
+                     <tr class="bold"><td>TOTAL TAXES PAID</td><td class="text-right">${formatCurr(data.totTaxesPaid)}</td></tr>
+                     <tr class="bold"><td>REFUND DUE / (BALANCE TAX PAYABLE)</td><td class="text-right">${formatCurr(data.refundDue)}</td></tr>
+                 </table>
+
+                 <h2>5. Bank Account & Verification Details</h2>
+                 <table>
+                     <tr><td class="bold">Bank Name</td><td>${data.bankName}</td><td class="bold">Account Type</td><td>Savings (SB)</td></tr>
+                     <tr><td class="bold">Account Number</td><td>${data.accNo}</td><td class="bold">IFSC Code</td><td>${data.ifsc}</td></tr>
+                     <tr><td class="bold">Refund Status</td><td>Selected for Direct Credit</td><td class="bold">Verification Place</td><td>${data.verPlace}</td></tr>
+                     <tr><td class="bold">Verification Date</td><td>${data.verDate}</td><td class="bold">Verified By</td><td>${data.verifiedBy}</td></tr>
+                 </table>
+
+                 <div class="page-break"></div>
+
+                 <h1>BANK FINANCIAL STUDY & LOAN ELIGIBILITY SHEET</h1>
+                 <div class="sub-title">Summary of Cash Flows, Debt Capacity, and FOIR Analysis for Banking & Credit Assessment</div>
+
+                 <h2>1. Annual & Monthly Income Summary</h2>
+                 <table>
+                     <tr class="bold"><td>Income Parameter</td><td class="text-right">Annual Amount (₹)</td><td class="text-right">Monthly Amount (₹)</td><td>Basis / Notes</td></tr>
+                     <tr><td>Gross Salary Income</td><td class="text-right">${formatCurr(data.grossSal)}</td><td class="text-right">${formatCurr(data.grossSal/12)}</td><td>Salary Income</td></tr>
+                     <tr><td>Standard Deduction Allowed</td><td class="text-right">${formatCurr(data.stdDed)}</td><td class="text-right">${formatCurr(data.stdDed/12)}</td><td>Statutory Deduction</td></tr>
+                     <tr class="bold"><td>Net Salary Income</td><td class="text-right">${formatCurr(data.netSal)}</td><td class="text-right">${formatCurr(data.netSal/12)}</td><td>Net Taxable Salary</td></tr>
+                     <tr><td>Dividend Income</td><td class="text-right">${formatCurr(data.divInc)}</td><td class="text-right">${formatCurr(data.divInc/12)}</td><td>Passive Yield</td></tr>
+                     <tr><td>Savings Interest Income</td><td class="text-right">${formatCurr(data.savInc)}</td><td class="text-right">${formatCurr(data.savInc/12)}</td><td>Bank Interest</td></tr>
+                     <tr class="bold"><td>GROSS TOTAL INCOME (GTI)</td><td class="text-right">${formatCurr(data.gti)}</td><td class="text-right">${formatCurr(data.gti/12)}</td><td>Total Annual Cash Flow Base</td></tr>
+                 </table>
+
+                 <h2>2. Estimated Loan Eligibility & Repayment Capacity</h2>
+                 <table>
+                     <tr class="bold"><td>Parameter</td><td class="text-right">Value</td><td>Notes</td></tr>
+                     <tr><td>Assumed FOIR Benchmark (Fixed Obligation to Income)</td><td class="text-right">50.0%</td><td>Standard Bank Policy Norm (50%)</td></tr>
+                     <tr><td>Monthly Net Eligible Cash Flow for EMI</td><td class="text-right">₹ ${formatCurr(mEmi)}</td><td>Net Monthly Income x FOIR %</td></tr>
+                     <tr><td>Assumed Loan Interest Rate (p.a.)</td><td class="text-right">8.5%</td><td>Prevailing Retail Loan Rate</td></tr>
+                     <tr><td>Assumed Tenure (Years)</td><td class="text-right">15</td><td>180 Months</td></tr>
+                     <tr class="bold"><td>Estimated Max EMI Capacity (Monthly)</td><td class="text-right">₹ ${formatCurr(mEmi)}</td><td>Maximum Monthly Installment Limit</td></tr>
+                     <tr class="bold"><td>Estimated Max Loan Eligibility (Principal)</td><td class="text-right">₹ ${formatCurr(maxLoan)}</td><td>Present Value of Cash Flow Capacity</td></tr>
+                 </table>
+
+                 <h2>3. Bank Compliance & Verification Checklist</h2>
+                 <table>
+                     <tr class="bold"><td>Check Item</td><td>Details</td><td class="text-center">Status</td></tr>
+                     <tr><td class="bold">ITR Form & Filing Compliance</td><td>${data.formDetails.FormName || 'ITR-1'} - Filed u/s 139(1)</td><td class="text-center bold">VERIFIED / COMPLIANT</td></tr>
+                     <tr><td class="bold">PAN & Aadhaar Seeding</td><td>PAN: ${data.pan} / Aadhaar: ${data.aadhaar}</td><td class="text-center bold">LINKED & VERIFIED</td></tr>
+                     <tr><td class="bold">Tax Payment Track Record</td><td>Advance Tax + TCS + SAT Paid: ₹ ${formatCurr(data.totTaxesPaid)}</td><td class="text-center bold">REGULAR TAXPAYER</td></tr>
+                     <tr><td class="bold">Bank Account Refund Routing</td><td>${data.bankName} (A/c: ...${data.accNo.slice(-4)})</td><td class="text-center bold">ACTIVE SAVINGS A/C</td></tr>
+                     <tr><td class="bold">Income Consistency</td><td>Salaried Income with Supplemental Savings/Div</td><td class="text-center bold">STABLE INCOME SOURCE</td></tr>
+                 </table>
+             `;
+
+             // HTML2PDF options
+             const pdfFileName = `Income_Computation_${data.fullName ? data.fullName.replace(/\s+/g, '_') : 'Taxpayer'}.pdf`;
+             const opt = {
+                 margin:       [0.5, 0.5, 0.5, 0.5],
+                 filename:     pdfFileName,
+                 image:        { type: 'jpeg', quality: 0.98 },
+                 html2canvas:  { scale: 2 },
+                 jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+             };
+
+             // Render & save PDF
+             template.style.display = 'block';
+             await html2pdf().set(opt).from(template).save();
+             template.style.display = 'none';
+
+             showStatus('PDF Document generated successfully!', 'success');
+         } catch (error) {
+             console.error(error);
+             showStatus('Error generating PDF document.', 'error');
+         }
+     }
 </script>
 
 </body>
