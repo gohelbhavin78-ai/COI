@@ -360,43 +360,6 @@
                      <tr><td class="bold">Refund Status</td><td>Selected for Direct Credit</td><td class="bold">Verification Place</td><td>${data.verPlace}</td></tr>
                      <tr><td class="bold">Verification Date</td><td>${data.verDate}</td><td class="bold">Verified By</td><td>${data.verifiedBy}</td></tr>
                  </table>
-
-                 <div class="page-break"></div>
-
-                 <h1>BANK FINANCIAL STUDY & LOAN ELIGIBILITY SHEET</h1>
-                 <div class="sub-title">Summary of Cash Flows, Debt Capacity, and FOIR Analysis for Banking & Credit Assessment</div>
-
-                 <h2>1. Annual & Monthly Income Summary</h2>
-                 <table>
-                     <tr class="bold"><td>Income Parameter</td><td class="text-right">Annual Amount (₹)</td><td class="text-right">Monthly Amount (₹)</td><td>Basis / Notes</td></tr>
-                     <tr><td>Gross Salary Income</td><td class="text-right">${formatCurr(data.grossSal)}</td><td class="text-right">${formatCurr(data.grossSal/12)}</td><td>Salary Income</td></tr>
-                     <tr><td>Standard Deduction Allowed</td><td class="text-right">${formatCurr(data.stdDed)}</td><td class="text-right">${formatCurr(data.stdDed/12)}</td><td>Statutory Deduction</td></tr>
-                     <tr class="bold"><td>Net Salary Income</td><td class="text-right">${formatCurr(data.netSal)}</td><td class="text-right">${formatCurr(data.netSal/12)}</td><td>Net Taxable Salary</td></tr>
-                     <tr><td>Dividend Income</td><td class="text-right">${formatCurr(data.divInc)}</td><td class="text-right">${formatCurr(data.divInc/12)}</td><td>Passive Yield</td></tr>
-                     <tr><td>Savings Interest Income</td><td class="text-right">${formatCurr(data.savInc)}</td><td class="text-right">${formatCurr(data.savInc/12)}</td><td>Bank Interest</td></tr>
-                     <tr class="bold"><td>GROSS TOTAL INCOME (GTI)</td><td class="text-right">${formatCurr(data.gti)}</td><td class="text-right">${formatCurr(data.gti/12)}</td><td>Total Annual Cash Flow Base</td></tr>
-                 </table>
-
-                 <h2>2. Estimated Loan Eligibility & Repayment Capacity</h2>
-                 <table>
-                     <tr class="bold"><td>Parameter</td><td class="text-right">Value</td><td>Notes</td></tr>
-                     <tr><td>Assumed FOIR Benchmark (Fixed Obligation to Income)</td><td class="text-right">50.0%</td><td>Standard Bank Policy Norm (50%)</td></tr>
-                     <tr><td>Monthly Net Eligible Cash Flow for EMI</td><td class="text-right">₹ ${formatCurr(mEmi)}</td><td>Net Monthly Income x FOIR %</td></tr>
-                     <tr><td>Assumed Loan Interest Rate (p.a.)</td><td class="text-right">8.5%</td><td>Prevailing Retail Loan Rate</td></tr>
-                     <tr><td>Assumed Tenure (Years)</td><td class="text-right">15</td><td>180 Months</td></tr>
-                     <tr class="bold"><td>Estimated Max EMI Capacity (Monthly)</td><td class="text-right">₹ ${formatCurr(mEmi)}</td><td>Maximum Monthly Installment Limit</td></tr>
-                     <tr class="bold"><td>Estimated Max Loan Eligibility (Principal)</td><td class="text-right">₹ ${formatCurr(maxLoan)}</td><td>Present Value of Cash Flow Capacity</td></tr>
-                 </table>
-
-                 <h2>3. Bank Compliance & Verification Checklist</h2>
-                 <table>
-                     <tr class="bold"><td>Check Item</td><td>Details</td><td class="text-center">Status</td></tr>
-                     <tr><td class="bold">ITR Form & Filing Compliance</td><td>${data.formDetails.FormName || 'ITR-1'} - Filed u/s 139(1)</td><td class="text-center bold">VERIFIED / COMPLIANT</td></tr>
-                     <tr><td class="bold">PAN & Aadhaar Seeding</td><td>PAN: ${data.pan} / Aadhaar: ${data.aadhaar}</td><td class="text-center bold">LINKED & VERIFIED</td></tr>
-                     <tr><td class="bold">Tax Payment Track Record</td><td>Advance Tax + TCS + SAT Paid: ₹ ${formatCurr(data.totTaxesPaid)}</td><td class="text-center bold">REGULAR TAXPAYER</td></tr>
-                     <tr><td class="bold">Bank Account Refund Routing</td><td>${data.bankName} (A/c: ...${data.accNo.slice(-4)})</td><td class="text-center bold">ACTIVE SAVINGS A/C</td></tr>
-                     <tr><td class="bold">Income Consistency</td><td>Salaried Income with Supplemental Savings/Div</td><td class="text-center bold">STABLE INCOME SOURCE</td></tr>
-                 </table>
              `;
 
              // HTML2PDF options
